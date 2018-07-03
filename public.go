@@ -304,7 +304,7 @@ Result: array of pair name and recent trade data
     array of array entries(<price>, <volume>, <time>, <buy/sell>, <market/limit>, <miscellaneous>)
 last = id to be used as since when polling for new trade data
 */
-func (api *KrakenApi) ApiTrades(pair string, since string) (map[string][]RecentTrade, float64, error) {
+func (api *KrakenApi) ApiTrades(pair string, since string) (map[string][]RecentTrade, string, error) {
 	params := url.Values{}
 	params.Set("pair", pair)
 
@@ -314,23 +314,20 @@ func (api *KrakenApi) ApiTrades(pair string, since string) (map[string][]RecentT
 
 	resp, err := api.Query(URL_PUBLIC_RECENT_TRADES, params, false)
 	if err != nil {
-		return nil, 0, err
+		return nil, "", err
 	}
 
 	content, err := parse(resp, nil)
 	if err != nil {
-		return nil, 0, err
+		return nil, "", err
 	}
 
-	var last float64
+	var last string
 	out := make(map[string][]RecentTrade)
 
 	for key, value := range content.(map[string]interface{}) {
 		if key == "last" {
-			last, err = strconv.ParseFloat(value.(string), 64)
-			if err != nil {
-				return nil, 0, err
-			}
+			last = value.(string)
 			break
 		}
 
@@ -341,12 +338,12 @@ func (api *KrakenApi) ApiTrades(pair string, since string) (map[string][]RecentT
 
 			price, err := strconv.ParseFloat(values[0].(string), 64)
 			if err != nil {
-				return nil, 0, err
+				return nil, "", err
 			}
 
 			volume, err := strconv.ParseFloat(values[1].(string), 64)
 			if err != nil {
-				return nil, 0, err
+				return nil, "", err
 			}
 
 			trades = append(trades, RecentTrade{
